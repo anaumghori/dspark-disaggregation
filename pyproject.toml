@@ -1,0 +1,20 @@
+[project]
+name = "dspark-serving"
+version = "0.1.0"
+description = "DeepSeek-V4-Flash DSpark speculative decoding deployment: SGLang serving engine behind Dynamo orchestration on 4x RTX Pro 6000 (sm_120)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "sglang @ git+https://github.com/sgl-project/sglang.git@71de97b264#subdirectory=python",
+    "ai-dynamo-runtime @ git+https://github.com/ai-dynamo/dynamo.git@2ecbdfdf19#subdirectory=lib/bindings/python",
+    "ai-dynamo @ git+https://github.com/ai-dynamo/dynamo.git@2ecbdfdf19",
+    "blake3>=1.0.0,<2.0.0",
+    "mooncake-transfer-engine-cuda13",
+    "matplotlib>=3.9,<4",
+    "huggingface_hub",
+]
+
+[tool.uv]
+package = false
+override-dependencies = [
+    "flashinfer-python[cu13]==0.6.18",
+]

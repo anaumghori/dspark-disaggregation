@@ -1,0 +1,32 @@
+# Decode worker argument set (TP=2 on GPU 2-3). Carries the DSpark
+# speculative configuration: the draft state relay across the PD boundary is
+# consumed on the decode side, so the DSPARK flags live here and only here.
+# Consumed by deploy/launch/serve.sh; one flag per line, blank lines
+# and # comments ignored. File paths are resolved relative to the repo root.
+--model-path deepseek-ai/DeepSeek-V4-Flash-0731
+--served-model-name deepseek-v4-flash-dspark
+--tp 2
+--trust-remote-code
+--disaggregation-mode decode
+--disaggregation-transfer-backend mooncake
+--speculative-algorithm DSPARK
+# gamma=5 is the checkpoint's native dspark_block_size; SGLang infers it from
+# the checkpoint when the flag is unset, and it is pinned here for explicitness.
+--speculative-dspark-block-size 5
+# SPS step-cost table: required by this deployment's launch gate (without it
+# SGLang falls back to an uninitialized flat table and the budget planner
+# degenerates to verify-all). Generated on this host via `make calibrate`
+# (scripts/calibrate_sps_sts.sh).
+--speculative-dspark-sps-table-path configs/dspark_sps_table.json
+# STS confidence calibration: optional. The launch script drops this flag when
+# the table does not exist, so the engine runs without STS tuning.
+--speculative-dspark-confidence-sts-path configs/dspark_sts_table.json
+--speculative-moe-runner-backend flashinfer_mxfp4
+--moe-runner-backend flashinfer_mxfp4
+--swa-full-tokens-ratio 0.1
+# Lower pool fraction than the prefill side: the decode pool carries the
+# resident weights plus the bundled drafter and its CUDA-graph buffers.
+--mem-fraction-static 0.93
+--max-running-requests 32
+--cuda-graph-max-bs-decode 32
+--enable-metrics

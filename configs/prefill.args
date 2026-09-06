@@ -1,0 +1,19 @@
+# Prefill worker argument set (TP=2 on GPU 0-1).
+# Consumed by deploy/launch/serve.sh; one flag per line, blank lines
+# and # comments ignored. File paths are resolved relative to the repo root.
+--model-path deepseek-ai/DeepSeek-V4-Flash-0731
+--served-model-name deepseek-v4-flash-dspark
+--tp 2
+--trust-remote-code
+--disaggregation-mode prefill
+--disaggregation-transfer-backend mooncake
+--moe-runner-backend flashinfer_mxfp4
+--swa-full-tokens-ratio 0.1
+--chunked-prefill-size 4096
+--mem-fraction-static 0.85
+--enable-metrics
+# Prefill CUDA graphs disabled to avoid OOM on 96 GiB GPUs with DSpark
+# (breakable capture at 4096 tokens needs ~4 GiB contiguous but only ~3.15 GiB
+# remains after weight + KV pool at 0.95; 0.85 + disabled avoids the failure
+# seen in Modal logs without privileged mode).
+--cuda-graph-backend-prefill disabled

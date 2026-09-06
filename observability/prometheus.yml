@@ -1,0 +1,44 @@
+# Prometheus scrape configuration for the DSpark deployment on a single GPU
+# host. Each dynamo.sglang worker runs a system status server that exposes
+# health and a combined /metrics endpoint (Dynamo component metrics plus the
+# sglang:* engine metrics registered when the worker was launched with
+# --enable-metrics). The launch script assigns 8081 (DYN_SYSTEM_PORT1) to the
+# prefill worker and 8082 (DYN_SYSTEM_PORT2) to the decode worker.
+#
+# The Dynamo frontend deliberately exposes no Prometheus endpoint: it pops
+# DYN_SYSTEM_PORT at startup and warns if the var is set ("the frontend does
+# not expose a system metrics server"). So there is intentionally no frontend
+# scrape job here; per-worker sglang:/Dynamo metrics and host metrics are the
+# scrape surface. Frontend request handling is observed through the workers'
+# request metrics rather than a frontend-local /metrics.
+#
+# Run alongside the deployment, e.g.:
+#   prometheus --config.file=observability/prometheus.yml
+# The Grafana dashboard at grafana_dspark_serving.json consumes this Prometheus.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: dspark-worker-prefill
+    static_configs:
+      - targets: ["localhost:8081"]
+        labels:
+          component: prefill-worker
+  - job_name: dspark-worker-decode
+    static_configs:
+      - targets: ["localhost:8082"]
+        labels:
+          component: decode-worker
+    # Scrape failures while a worker is still starting are benign; scraping a
+    # closed port logs a scrape failure and nothing else, so leaving both jobs
+    # enabled unconditionally is safe.
+  - job_name: dspark-host
+    static_configs:
+      - targets: ["localhost:9100"]
+        labels:
+          component: node-exporter
+    # Optional node_exporter for GPU-adjacent host metrics (PCIe/NVMe
+    # saturation during weight loads and KV transfers). Scrape failures are
+    # benign when node_exporter is not installed.

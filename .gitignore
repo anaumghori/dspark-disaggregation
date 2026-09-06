@@ -1,0 +1,8 @@
+.venv/
+.cache/
+run/
+*.pid
+__pycache__/
+.prometheus-data/
+.grafana-data/
+uv.lock

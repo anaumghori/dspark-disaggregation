@@ -1,0 +1,37 @@
+# Model registration metadata for the deployed checkpoint. Informational and
+# consumed by validation tooling only; nothing at runtime reads this file.
+# The checkpoint's own config.json is the single source of truth that SGLang
+# resolves the architecture and DSpark drafter configuration from.
+model_name: deepseek-ai/DeepSeek-V4-Flash-0731
+architectures:
+  - DeepseekV4ForCausalLM
+total_parameters: 284B
+active_parameters_per_token: ~13B
+quantization:
+  # Hybrid release: FP8 e4m3 quantization_config (ue8m0 scales, 128x128 weight
+  # blocks) for non-expert weights, top-level expert_dtype: "fp4" declaring
+  # the MoE expert tensors as packed MXFP4. Consumed as-is through the
+  # flashinfer_mxfp4 runner with no conversion step.
+  non_expert: fp8-e4m3
+  weight_block_size: [128, 128]
+  expert_dtype: fp4
+dspark:
+  # Bundled drafter: the mtp.* parameter group inside the same checkpoint,
+  # including trained confidence_head and markov_head weights (mtp.2.*).
+  block_size: 5
+  markov_rank: 256
+  target_layer_ids: [40, 41, 42]
+  noise_token_id: 128799
+  # The checkpoint's config.json does not declare enable_confidence_head; the
+  # framework only warns about this and always constructs the head when the
+  # ragged-verify mode is not static (which production compact mode is), then
+  # asserts every confidence_head.* weight loaded (deepseek_v4_dspark.py).
+  enable_confidence_head: not-declared-in-config-constructed-by-framework
+  confidence_head_weights: present
+sparse_attention:
+  index_topk: 512
+  # --enable-deepseek-v4-fp4-indexer is never set: it forces a DeepGEMM
+  # metadata path that is unavailable on sm_120. The automatic SM120 indexer
+  # configuration (TileLang with the torch fallback) applies instead.
+  fp4_indexer_flag: false
+context_length: 1048576

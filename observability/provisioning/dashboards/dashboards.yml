@@ -1,0 +1,11 @@
+apiVersion: 1
+providers:
+  - name: DSpark
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: $DSPARK_DASHBOARDS_PATH
+      foldersFromFilesStructure: false
